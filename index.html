@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bharat PinPoint</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111318;color:#f5f5f5}
+.wrap{max-width:900px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+h1{margin:0;font-size:25px}.muted{color:#aeb3bd;font-size:14px}.card{background:#1b1e24;border:1px solid #30343d;border-radius:16px;padding:15px;margin-top:14px}
+#map{height:500px;border-radius:12px;overflow:hidden;background:#ddd}.bar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:12px 16px;font-weight:700;cursor:pointer;background:#e9eef7;color:#111}
+button:disabled{opacity:.4}.danger{background:#f0a0a0}.green{background:#b8e6c1}.hidden{display:none}
+.stat{padding:8px 11px;border:1px solid #343943;border-radius:10px}.result{font-size:18px;line-height:1.55}
+textarea{width:100%;min-height:130px;background:#101218;color:#fff;border:1px solid #3b404b;border-radius:10px;padding:12px;font:14px monospace}
+input{background:#101218;color:#fff;border:1px solid #3b404b;border-radius:9px;padding:10px;width:100%}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.small{font-size:13px}
+@media(max-width:650px){#map{height:430px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>🇮🇳 Bharat PinPoint</h1><div class="muted">Daily India geography practice</div></div>
+    <div class="stat" id="day">Day —</div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <div><div class="muted" id="round">Loading…</div><h2 id="place" style="margin:3px 0">Loading map…</h2></div>
+      <div class="stat">⏱ <span id="time">60</span>s</div>
+    </div>
+    <div id="map"></div>
+    <div class="bar">
+      <span class="muted" id="msg">Tap the map to place your guess.</span>
+      <button id="lock" disabled>Lock Guess</button>
+    </div>
+    <div id="result" class="result"></div>
+    <div class="bar">
+      <div class="stat">🏆 <span id="score">0</span> points</div>
+      <button id="next" class="hidden">Next →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">➕ Add locations</h3>
+    <p class="muted">Paste one per line: <b>Place name | latitude, longitude</b></p>
+    <textarea id="newPlaces" placeholder="Kaziranga National Park | 26.5775, 93.1711
+Siachen Glacier | 35.4212, 77.1090"></textarea>
+    <div class="bar">
+      <button id="add" class="green">Add to my pool</button>
+      <button id="reset" class="danger">Reset added locations</button>
+    </div>
+    <div class="small muted" id="count"></div>
+    <p class="small muted">Added locations are saved in this browser. Later, we will move them to the online database so you and your partner share the same pool.</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const base=[
+["Jathiya Devi",31.1332,77.0984],["Nathu La",27.3865,88.8309],
+["Changtang Valley",33.4000,79.0000],["Ramappa Temple",18.2591,79.9432],
+["Coffee Board of India",12.9794,77.5946],["Tso Kar",33.3134,78.0125],
+["Sir Creek",23.6425,68.1633],["3 Kilo Coal Mine",25.5255,92.7482]
+];
+const key="bharatPinpointAddedV1";
+let added=JSON.parse(localStorage.getItem(key)||"[]");
+let pool=base.concat(added), round=0,total=0,guess=null,actualMarker=null,guessMarker=null,line=null,locked=false,seconds=60,timer=null;
+
+const map=L.map("map",{minZoom:4,maxZoom:12}).setView([22.5,79],5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(map);
+
+function dayNumber(){
+  const d=new Date(); return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
+}
+function dailyOrder(){
+  // Deterministic daily rotation: every location is used once per cycle before repeats.
+  const n=dayNumber(), size=10, start=(n*size)%pool.length;
+  let arr=[];
+  for(let i=0;i<Math.min(size,pool.length);i++) arr.push(pool[(start+i)%pool.length]);
+  // Shuffle within the daily batch deterministically.
+  for(let i=arr.length-1;i>0;i--){const j=(n+i*17)% (i+1); [arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+function updateCount(){document.getElementById("count").textContent=`${pool.length} locations in your pool.`}
+function hav(a,b){
+  const R=6371,p=Math.PI/180,dLat=(b[0]-a[0])*p,dLon=(b[1]-a[1])*p;
+  const x=Math.sin(dLat/2)**2+Math.cos(a[0]*p)*Math.cos(b[0]*p)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function points(km){return Math.max(0,Math.round(5000*Math.exp(-km/1200)))}
+function start(){
+  const daily=dailyOrder(); window.daily=daily;
+  document.getElementById("day").textContent="Day "+(dayNumber()+1);
+  round=0; total=0; document.getElementById("score").textContent="0"; showRound();
+}
+function showRound(){
+  clearInterval(timer); seconds=60; locked=false; guess=null;
+  if(guessMarker){map.removeLayer(guessMarker);guessMarker=null}
+  if(actualMarker){map.removeLayer(actualMarker);actualMarker=null}
+  if(line){map.removeLayer(line);line=null}
+  document.getElementById("time").textContent=seconds;
+  document.getElementById("round").textContent=`ROUND ${round+1} / ${daily.length}`;
+  document.getElementById("place").textContent=daily[round][0];
+  document.getElementById("msg").textContent="Tap the map to place your guess.";
+  document.getElementById("result").innerHTML="";
+  document.getElementById("lock").disabled=true;
+  document.getElementById("next").classList.add("hidden");
+  timer=setInterval(()=>{seconds--;document.getElementById("time").textContent=seconds;if(seconds<=0){clearInterval(timer);if(guess) lock();}},1000);
+}
+map.on("click",e=>{
+  if(locked)return;
+  guess=[e.latlng.lat,e.latlng.lng];
+  if(guessMarker)map.removeLayer(guessMarker);
+  guessMarker=L.circleMarker(e.latlng,{radius:8,color:"#fff",weight:2,fillColor:"#1976d2",fillOpacity:1}).addTo(map);
+  document.getElementById("lock").disabled=false;
+  document.getElementById("msg").textContent="Guess placed. Lock it when ready.";
+});
+function lock(){
+  if(!guess||locked)return; locked=true; clearInterval(timer);
+  const p=daily[round], target=[p[1],p[2]], km=hav(guess,target), pts=points(km); total+=pts;
+  actualMarker=L.circleMarker(target,{radius:8,color:"#fff",weight:2,fillColor:"#d64545",fillOpacity:1}).addTo(map);
+  line=L.polyline([guess,target],{dashArray:"6 6",color:"#d64545"}).addTo(map);
+  document.getElementById("score").textContent=total.toLocaleString();
+  document.getElementById("result").innerHTML=`<div><b>${pts.toLocaleString()} / 5,000</b><br>Distance: ${km<10?km.toFixed(1):Math.round(km).toLocaleString()} km<br><span class="muted">Actual: ${p[0]} — ${p[1].toFixed(4)}, ${p[2].toFixed(4)}</span></div>`;
+  document.getElementById("msg").textContent="Red = actual location • Blue = your guess";
+  if(round<daily.length-1)document.getElementById("next").classList.remove("hidden");
+  else document.getElementById("result").innerHTML+=`<div style="margin-top:8px"><b>🏁 Daily total: ${total.toLocaleString()} / ${(daily.length*5000).toLocaleString()}</b></div>`;
+}
+document.getElementById("lock").onclick=lock;
+document.getElementById("next").onclick=()=>{round++;showRound()};
+document.getElementById("add").onclick=()=>{
+  const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean), fresh=[];
+  for(const s of lines){
+    const m=s.match(/^(.+?)\s*\|\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if(!m){alert("Could not read: "+s+"\nUse: Place name | latitude, longitude");return}
+    const lat=Number(m[2]),lon=Number(m[3]);
+    if(lat<-90||lat>90||lon<-180||lon>180){alert("Invalid coordinates: "+s);return}
+    fresh.push([m[1],lat,lon]);
+  }
+  added=added.concat(fresh);localStorage.setItem(key,JSON.stringify(added));pool=base.concat(added);
+  document.getElementById("newPlaces").value="";updateCount();start();alert(fresh.length+" location(s) added.");
+};
+document.getElementById("reset").onclick=()=>{
+  if(confirm("Remove all locations you added in this browser?")){added=[];localStorage.removeItem(key);pool=base.concat(added);updateCount();start();}
+};
+updateCount();start();
+</script>
+</body>
+</html>
