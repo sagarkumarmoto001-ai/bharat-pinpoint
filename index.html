@@ -138,28 +138,42 @@ function lock(){
 document.getElementById("lock").onclick=lock;
 document.getElementById("next").onclick=()=>{round++;showRound()};
 document.getElementById("add").onclick=async ()=>{
-  const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean), fresh=[];
+  const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean),fresh=[];
+
   for(const s of lines){
-    const m=s.match(/^(.+?)\s*\|\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
-    if(!m){alert("Could not read: "+s+"\nUse: Place name | latitude, longitude");return}
-    const lat=Number(m[2]),lon=Number(m[3]);
-    if(lat<-90||lat>90||lon<-180||lon>180){alert("Invalid coordinates: "+s);return}
-    fresh.push([m[1],lat,lon]);
+    const parts=s.split("|").map(x=>x.trim());
+
+    if(parts.length!==3){
+      alert("Could not read: "+s+" | Use: Place name | latitude | longitude");
+      return;
+    }
+
+    const name=parts[0];
+    const lat=Number(parts[1]);
+    const lon=Number(parts[2]);
+
+    if(!name || !Number.isFinite(lat) || !Number.isFinite(lon) ||
+       lat<-90 || lat>90 || lon<-180 || lon>180){
+      alert("Invalid location: "+s);
+      return;
+    }
+
+    fresh.push([name,lat,lon]);
   }
-const { error } = await supabaseClient
-  .from("locations")
-  .insert(fresh.map(x => ({
-    name: x[0],
-    latitude: x[1],
-    longitude: x[2]
-  })));
 
-if (error) {
-  alert("Could not save locations: " + error.message);
-  console.error(error);
-  return;
-}
+  const { error } = await supabaseClient
+    .from("locations")
+    .insert(fresh.map(x => ({
+      name:x[0],
+      latitude:x[1],
+      longitude:x[2]
+    })));
 
+  if(error){
+    alert("Could not save locations: " + error.message);
+    console.error(error);
+    return;
+  }
 added=added.concat(fresh);
 localStorage.setItem(key,JSON.stringify(added));
 pool=base.concat(added);
