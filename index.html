@@ -58,8 +58,14 @@ Siachen Glacier | 35.4212, 77.1090"></textarea>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const base=[
+const SUPABASE_URL = "https://dsbttcgtbhrtjizlutdu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zYfgPwv3xoTTUHEMIY1ILA_1UEYvTaI";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<script>
+let base=[
 ["Jathiya Devi",31.1332,77.0984],["Nathu La",27.3865,88.8309],
 ["Changtang Valley",33.4000,79.0000],["Ramappa Temple",18.2591,79.9432],
 ["Coffee Board of India",12.9794,77.5946],["Tso Kar",33.3134,78.0125],
@@ -131,7 +137,7 @@ function lock(){
 }
 document.getElementById("lock").onclick=lock;
 document.getElementById("next").onclick=()=>{round++;showRound()};
-document.getElementById("add").onclick=()=>{
+document.getElementById("add").onclick=async ()=>{
   const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean), fresh=[];
   for(const s of lines){
     const m=s.match(/^(.+?)\s*\|\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
@@ -140,8 +146,28 @@ document.getElementById("add").onclick=()=>{
     if(lat<-90||lat>90||lon<-180||lon>180){alert("Invalid coordinates: "+s);return}
     fresh.push([m[1],lat,lon]);
   }
-  added=added.concat(fresh);localStorage.setItem(key,JSON.stringify(added));pool=base.concat(added);
-  document.getElementById("newPlaces").value="";updateCount();start();alert(fresh.length+" location(s) added.");
+const { error } = await supabaseClient
+  .from("locations")
+  .insert(fresh.map(x => ({
+    name: x[0],
+    latitude: x[1],
+    longitude: x[2]
+  })));
+
+if (error) {
+  alert("Could not save locations: " + error.message);
+  console.error(error);
+  return;
+}
+
+added=added.concat(fresh);
+localStorage.setItem(key,JSON.stringify(added));
+pool=base.concat(added);
+
+document.getElementById("newPlaces").value="";
+updateCount();
+start();
+alert(fresh.length+" location(s) added.");
 };
 document.getElementById("reset").onclick=()=>{
   if(confirm("Remove all locations you added in this browser?")){added=[];localStorage.removeItem(key);pool=base.concat(added);updateCount();start();}
