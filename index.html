@@ -138,6 +138,7 @@ function lock(){
 document.getElementById("lock").onclick=lock;
 document.getElementById("next").onclick=()=>{round++;showRound()};
 document.getElementById("add").onclick=async ()=>{
+  alert("BUTTON CLICKED");
 console.log("ADD BUTTON WORKS");
   const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean),fresh=[];
 
