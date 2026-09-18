@@ -4,625 +4,1250 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bharat PinPoint</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#111318;color:#f5f5f5}
-.wrap{max-width:900px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}
-h1{margin:0;font-size:25px}.muted{color:#aeb3bd;font-size:14px}.card{background:#1b1e24;border:1px solid #30343d;border-radius:16px;padding:15px;margin-top:14px}
-#map{height:500px;border-radius:12px;overflow:hidden;background:#ddd}.bar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:12px 0;flex-wrap:wrap}
-button{border:0;border-radius:11px;padding:12px 16px;font-weight:700;cursor:pointer;background:#e9eef7;color:#111}
-button:disabled{opacity:.4}.danger{background:#f0a0a0}.green{background:#b8e6c1}.hidden{display:none}
-.stat{padding:8px 11px;border:1px solid #343943;border-radius:10px}.result{font-size:18px;line-height:1.55}
-textarea{width:100%;min-height:130px;background:#101218;color:#fff;border:1px solid #3b404b;border-radius:10px;padding:12px;font:14px monospace}
-input{background:#101218;color:#fff;border:1px solid #3b404b;border-radius:9px;padding:10px;width:100%}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.small{font-size:13px}
-@media(max-width:650px){#map{height:430px}.grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,sans-serif;
+  background:#111318;
+  color:#f5f5f5;
+}
+
+.wrap{
+  max-width:900px;
+  margin:auto;
+  padding:18px;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+
+h1{
+  margin:0;
+  font-size:25px;
+}
+
+.muted{
+  color:#aeb3bd;
+  font-size:14px;
+}
+
+.card{
+  background:#1b1e24;
+  border:1px solid #30343d;
+  border-radius:16px;
+  padding:15px;
+  margin-top:14px;
+}
+
+#map{
+  height:500px;
+  border-radius:12px;
+  overflow:hidden;
+  background:#ddd;
+}
+
+.bar{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin:12px 0;
+  flex-wrap:wrap;
+}
+
+button{
+  border:0;
+  border-radius:11px;
+  padding:12px 16px;
+  font-weight:700;
+  cursor:pointer;
+  background:#e9eef7;
+  color:#111;
+}
+
+button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+.danger{
+  background:#f0a0a0;
+}
+
+.green{
+  background:#b8e6c1;
+}
+
+.hidden{
+  display:none;
+}
+
+.stat{
+  padding:8px 11px;
+  border:1px solid #343943;
+  border-radius:10px;
+}
+
+.result{
+  font-size:18px;
+  line-height:1.55;
+}
+
+textarea{
+  width:100%;
+  min-height:130px;
+  background:#101218;
+  color:#fff;
+  border:1px solid #3b404b;
+  border-radius:10px;
+  padding:12px;
+  font:14px monospace;
+}
+
+.small{
+  font-size:13px;
+}
+
+@media(max-width:650px){
+  #map{
+    height:430px;
+  }
+}
 </style>
 </head>
+
 <body>
+
 <div class="wrap">
+
   <div class="top">
-    <div><h1>🇮🇳 Bharat PinPoint</h1><div class="muted">Daily India geography practice</div></div>
-    <div class="stat" id="day">Day —</div>
+    <div>
+      <h1>🇮🇳 Bharat PinPoint</h1>
+      <div class="muted">Daily India geography practice</div>
+    </div>
+
+    <div class="stat" id="day">
+      Day —
+    </div>
   </div>
 
+
   <div class="card">
+
     <div class="bar">
-      <div><div class="muted" id="round">Loading…</div><h2 id="place" style="margin:3px 0">Loading map…</h2></div>
-      <div class="stat">⏱ <span id="time">60</span>s</div>
+      <div>
+        <div class="muted" id="round">
+          Loading…
+        </div>
+
+        <h2 id="place" style="margin:3px 0">
+          Loading map…
+        </h2>
+      </div>
+
+      <div class="stat">
+        ⏱ <span id="time">60</span>s
+      </div>
     </div>
+
+
     <div id="map"></div>
+
+
     <div class="bar">
-      <span class="muted" id="msg">Tap the map to place your guess.</span>
-      <button id="lock" disabled>Lock Guess</button>
+      <span class="muted" id="msg">
+        Tap the map to place your guess.
+      </span>
+
+      <button id="lock" disabled>
+        Lock Guess
+      </button>
     </div>
+
+
     <div id="result" class="result"></div>
+
+
     <div class="bar">
-      <div class="stat">🏆 <span id="score">0</span> points</div>
-      <button id="next" class="hidden">Next →</button>
+
+      <div class="stat">
+        🏆 <span id="score">0</span> points
+      </div>
+
+      <button id="next" class="hidden">
+        Next →
+      </button>
+
     </div>
+
   </div>
 
+
   <div class="card">
-    <h3 style="margin-top:0">➕ Add locations</h3>
-    <p class="muted">Paste one per line: <b>Place name | latitude, longitude</b></p>
-    <textarea id="newPlaces" placeholder="Kaziranga National Park | 26.5775, 93.1711
-Siachen Glacier | 35.4212, 77.1090"></textarea>
+
+    <h3 style="margin-top:0">
+      ➕ Add locations
+    </h3>
+
+    <p class="muted">
+      Paste one per line:
+      <b>Place name | latitude, longitude</b>
+    </p>
+
+    <textarea
+      id="newPlaces"
+      placeholder="Kaziranga National Park | 26.5775, 93.1711
+Siachen Glacier | 35.4212, 77.1090"
+    ></textarea>
+
     <div class="bar">
-      <button id="add" class="green">Add to my pool</button>
-      <button id="reset" class="danger">Reset added locations</button>
+
+      <button id="add" class="green">
+        Add to my pool
+      </button>
+
+      <button id="reset" class="danger">
+        Reset added locations
+      </button>
+
     </div>
+
     <div class="small muted" id="count"></div>
-    <p class="small muted">Added locations are saved in this browser. Later, we will move them to the online database so you and your partner share the same pool.</p>
+
+    <p class="small muted">
+      Added locations are saved in this browser and also sent to the
+      Supabase database.
+    </p>
+
   </div>
+
 </div>
 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://dsbttcgtbhrtjizlutdu.supabase.co";
-const SUPABASE_KEY = "sb_publishable_zYfgPwv3xoTTUHEMIY1ILA_1UEYvTaI";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
-<script>
-let base=[
-["Jathiya Devi",31.1332,77.0984],["Nathu La",27.3865,88.8309],
-["Changtang Valley",33.4000,79.0000],["Ramappa Temple",18.2591,79.9432],
-["Coffee Board of India",12.9794,77.5946],["Tso Kar",33.3134,78.0125],
-["Sir Creek",23.6425,68.1633],["3 Kilo Coal Mine",25.5255,92.7482]
-];
-const key="bharatPinpointAddedV1";
-let added=JSON.parse(localStorage.getItem(key)||"[]");
-let pool=base.concat(added), round=0,total=0,guess=null,actualMarker=null,guessMarker=null,line=null,locked=false,seconds=60,timer=null;
 
-const map=L.map("map",{minZoom:4,maxZoom:12}).setView([22.5,79],5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(map);
 
-function dayNumber(){
-  const d=new Date(); return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
-}
-function dailyOrder(){
-  // Deterministic daily rotation: every location is used once per cycle before repeats.
-  const n=dayNumber(), size=10, start=(n*size)%pool.length;
-  let arr=[];
-  for(let i=0;i<Math.min(size,pool.length);i++) arr.push(pool[(start+i)%pool.length]);
-  // Shuffle within the daily batch deterministically.
-  for(let i=arr.length-1;i>0;i--){const j=(n+i*17)% (i+1); [arr[i],arr[j]]=[arr[j],arr[i]];}
-  return arr;
-}
-function updateCount(){document.getElementById("count").textContent=`${pool.length} locations in your pool.`}
-function hav(a,b){
-  const R=6371,p=Math.PI/180,dLat=(b[0]-a[0])*p,dLon=(b[1]-a[1])*p;
-  const x=Math.sin(dLat/2)**2+Math.cos(a[0]*p)*Math.cos(b[0]*p)*Math.sin(dLon/2)**2;
-  return 2*R*Math.asin(Math.sqrt(x));
-}
-function points(km){return Math.max(0,Math.round(5000*Math.exp(-km/1200)))}
-function start(){
-  const daily=dailyOrder(); window.daily=daily;
-  document.getElementById("day").textContent="Day "+(dayNumber()+1);
-  round=0; total=0; document.getElementById("score").textContent="0"; showRound();
-}
-function showRound(){
-  clearInterval(timer); seconds=60; locked=false; guess=null;
-  if(guessMarker){map.removeLayer(guessMarker);guessMarker=null}
-  if(actualMarker){map.removeLayer(actualMarker);actualMarker=null}
-  if(line){map.removeLayer(line);line=null}
-  document.getElementById("time").textContent=seconds;
-  document.getElementById("round").textContent=`ROUND ${round+1} / ${daily.length}`;
-  document.getElementById("place").textContent=daily[round][0];
-  document.getElementById("msg").textContent="Tap the map to place your guess.";
-  document.getElementById("result").innerHTML="";
-  document.getElementById("lock").disabled=true;
-  document.getElementById("next").classList.add("hidden");
-  timer=setInterval(()=>{seconds--;document.getElementById("time").textContent=seconds;if(seconds<=0){clearInterval(timer);if(guess) lock();}},1000);
-}
-map.on("click",e=>{
-  if(locked)return;
-  guess=[e.latlng.lat,e.latlng.lng];
-  if(guessMarker)map.removeLayer(guessMarker);
-  guessMarker=L.circleMarker(e.latlng,{radius:8,color:"#fff",weight:2,fillColor:"#1976d2",fillOpacity:1}).addTo(map);
-  document.getElementById("lock").disabled=false;
-  document.getElementById("msg").textContent="Guess placed. Lock it when ready.";
-});
-function lock(){
-  if(!guess||locked)return; locked=true; clearInterval(timer);
-  const p=daily[round], target=[p[1],p[2]], km=hav(guess,target), pts=points(km); total+=pts;
-  actualMarker=L.circleMarker(target,{radius:8,color:"#fff",weight:2,fillColor:"#d64545",fillOpacity:1}).addTo(map);
-  line=L.polyline([guess,target],{dashArray:"6 6",color:"#d64545"}).addTo(map);
-  document.getElementById("score").textContent=total.toLocaleString();
-  document.getElementById("result").innerHTML=`<div><b>${pts.toLocaleString()} / 5,000</b><br>Distance: ${km<10?km.toFixed(1):Math.round(km).toLocaleString()} km<br><span class="muted">Actual: ${p[0]} — ${p[1].toFixed(4)}, ${p[2].toFixed(4)}</span></div>`;
-  document.getElementById("msg").textContent="Red = actual location • Blue = your guess";
-  if(round<daily.length-1)document.getElementById("next").classList.remove("hidden");
-  else document.getElementById("result").innerHTML+=`<div style="margin-top:8px"><b>🏁 Daily total: ${total.toLocaleString()} / ${(daily.length*5000).toLocaleString()}</b></div>`;
-}
-document.getElementById("lock").onclick=lock;
-document.getElementById("next").onclick=()=>{round++;showRound()};
-let base=[
-["Jathiya Devi",31.1332,77.0984],
-["Nathu La",27.3865,88.8309],
-["Changtang Valley",33.4000,79.0000],
-["Ramappa Temple",18.2591,79.9432],
-["Coffee Board of India",12.9794,77.5946],
-["Tso Kar",33.3134,78.0125],
-["Sir Creek",23.6425,68.1633],
-["3 Kilo Coal Mine",25.5255,92.7482]
+<script>
+
+/* =========================================
+   SUPABASE
+   ========================================= */
+
+const SUPABASE_URL =
+  "https://dsbttcgtbhrtjizlutdu.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_zYfgPwv3xoTTUHEMIY1ILA_1UEYvTaI";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+/* =========================================
+   BASE LOCATIONS
+   ========================================= */
+
+const base = [
+
+  ["Jathiya Devi",31.1332,77.0984],
+
+  ["Nathu La",27.3865,88.8309],
+
+  ["Changtang Valley",33.4000,79.0000],
+
+  ["Ramappa Temple",18.2591,79.9432],
+
+  ["Coffee Board of India",12.9794,77.5946],
+
+  ["Tso Kar",33.3134,78.0125],
+
+  ["Sir Creek",23.6425,68.1633],
+
+  ["3 Kilo Coal Mine",25.5255,92.7482]
+
 ];
 
-const key="bharatPinpointAddedV1";
 
-let added=JSON.parse(localStorage.getItem(key)||"[]");
-let pool=base.concat(added);
-let round=0,total=0,guess=null,actualMarker=null,guessMarker=null;
-let line=null,locked=false,seconds=60,timer=null;
+const storageKey =
+  "bharatPinpointAddedV1";
 
-const map=L.map("map",{minZoom:4,maxZoom:12}).setView([22.5,79],5);
+
+/* =========================================
+   LOAD SAVED LOCATIONS
+   ========================================= */
+
+let added = [];
+
+try {
+
+  const saved =
+    JSON.parse(
+      localStorage.getItem(storageKey) || "[]"
+    );
+
+  if(Array.isArray(saved)){
+    added = saved;
+  }
+
+}catch(error){
+
+  console.error(
+    "Could not read saved locations:",
+    error
+  );
+
+  added = [];
+}
+
+
+let pool =
+  base.concat(added);
+
+
+/* =========================================
+   GAME VARIABLES
+   ========================================= */
+
+let round = 0;
+
+let total = 0;
+
+let guess = null;
+
+let actualMarker = null;
+
+let guessMarker = null;
+
+let line = null;
+
+let locked = false;
+
+let seconds = 60;
+
+let timer = null;
+
+let daily = [];
+
+
+/* =========================================
+   MAP
+   ========================================= */
+
+const map =
+  L.map("map",{
+    minZoom:4,
+    maxZoom:12
+  }).setView(
+    [22.5,79],
+    5
+  );
+
 
 L.tileLayer(
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {attribution:"© OpenStreetMap contributors"}
+  {
+    attribution:
+      "© OpenStreetMap contributors"
+  }
 ).addTo(map);
 
+
+/* =========================================
+   DAY NUMBER
+   ========================================= */
+
 function dayNumber(){
-  const d=new Date();
+
+  const d = new Date();
+
   return Math.floor(
-    Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000
+    Date.UTC(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate()
+    ) / 86400000
   );
+
 }
+
+
+/* =========================================
+   DAILY ORDER
+   ========================================= */
 
 function dailyOrder(){
-  const n=dayNumber();
-  const size=10;
-  const start=(n*size)%pool.length;
-  let arr=[];
 
-  for(let i=0;i<Math.min(size,pool.length);i++){
-    arr.push(pool[(start+i)%pool.length]);
+  if(pool.length === 0){
+    return [];
   }
 
-  for(let i=arr.length-1;i>0;i--){
-    const j=(n+i*17)%(i+1);
-    [arr[i],arr[j]]=[arr[j],arr[i]];
+  const n =
+    dayNumber();
+
+  const size =
+    Math.min(
+      10,
+      pool.length
+    );
+
+  const start =
+    (n * size) % pool.length;
+
+  const arr = [];
+
+
+  for(
+    let i = 0;
+    i < size;
+    i++
+  ){
+
+    arr.push(
+      pool[
+        (start + i) %
+        pool.length
+      ]
+    );
+
   }
+
+
+  /* Deterministic shuffle */
+
+  for(
+    let i = arr.length - 1;
+    i > 0;
+    i--
+  ){
+
+    const j =
+      (n + i * 17) %
+      (i + 1);
+
+    [
+      arr[i],
+      arr[j]
+    ] =
+    [
+      arr[j],
+      arr[i]
+    ];
+
+  }
+
 
   return arr;
+
 }
+
+
+/* =========================================
+   UPDATE LOCATION COUNT
+   ========================================= */
 
 function updateCount(){
-  document.getElementById("count").textContent=
-    `${pool.length} locations in your pool.`;
+
+  document.getElementById("count")
+    .textContent =
+      `${pool.length} locations in your pool.`;
+
 }
 
-function hav(a,b){
-  const R=6371;
-  const p=Math.PI/180;
-  const dLat=(b[0]-a[0])*p;
-  const dLon=(b[1]-a[1])*p;
 
-  const x=
-    Math.sin(dLat/2)**2+
-    Math.cos(a[0]*p)*
-    Math.cos(b[0]*p)*
-    Math.sin(dLon/2)**2;
+/* =========================================
+   DISTANCE
+   ========================================= */
 
-  return 2*R*Math.asin(Math.sqrt(x));
+function haversine(a,b){
+
+  const R = 6371;
+
+  const p =
+    Math.PI / 180;
+
+  const dLat =
+    (b[0] - a[0]) * p;
+
+  const dLon =
+    (b[1] - a[1]) * p;
+
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[0] * p) *
+    Math.cos(b[0] * p) *
+    Math.sin(dLon / 2) ** 2;
+
+  return (
+    2 *
+    R *
+    Math.asin(
+      Math.sqrt(x)
+    )
+  );
+
 }
+
+
+/* =========================================
+   POINTS
+   ========================================= */
 
 function points(km){
+
   return Math.max(
     0,
-    Math.round(5000*Math.exp(-km/1200))
+    Math.round(
+      5000 *
+      Math.exp(-km / 1200)
+    )
   );
+
 }
+
+
+/* =========================================
+   START GAME
+   ========================================= */
 
 function start(){
-  const daily=dailyOrder();
-  window.daily=daily;
 
-  document.getElementById("day").textContent=
-    "Day "+(dayNumber()+1);
+  daily =
+    dailyOrder();
 
-  round=0;
-  total=0;
+  window.daily =
+    daily;
 
-  document.getElementById("score").textContent="0";
+
+  document.getElementById("day")
+    .textContent =
+      "Day " +
+      (dayNumber() + 1);
+
+
+  round = 0;
+
+  total = 0;
+
+
+  document.getElementById("score")
+    .textContent =
+      "0";
+
+
+  if(daily.length === 0){
+
+    document.getElementById("round")
+      .textContent =
+        "NO LOCATIONS";
+
+    document.getElementById("place")
+      .textContent =
+        "Add a location to begin";
+
+    return;
+
+  }
+
 
   showRound();
+
 }
+
+
+/* =========================================
+   SHOW ROUND
+   ========================================= */
 
 function showRound(){
+
   clearInterval(timer);
 
-  seconds=60;
-  locked=false;
-  guess=null;
+
+  seconds = 60;
+
+  locked = false;
+
+  guess = null;
+
 
   if(guessMarker){
-    map.removeLayer(guessMarker);
-    guessMarker=null;
+
+    map.removeLayer(
+      guessMarker
+    );
+
+    guessMarker = null;
+
   }
+
 
   if(actualMarker){
-    map.removeLayer(actualMarker);
-    actualMarker=null;
+
+    map.removeLayer(
+      actualMarker
+    );
+
+    actualMarker = null;
+
   }
+
 
   if(line){
-    map.removeLayer(line);
-    line=null;
+
+    map.removeLayer(
+      line
+    );
+
+    line = null;
+
   }
 
-  document.getElementById("time").textContent=seconds;
 
-  document.getElementById("round").textContent=
-    `ROUND ${round+1} / ${daily.length}`;
+  document.getElementById("time")
+    .textContent =
+      seconds;
 
-  document.getElementById("place").textContent=
-    daily[round][0];
 
-  document.getElementById("msg").textContent=
-    "Tap the map to place your guess.";
+  document.getElementById("round")
+    .textContent =
+      `ROUND ${round + 1} / ${daily.length}`;
 
-  document.getElementById("result").innerHTML="";
 
-  document.getElementById("lock").disabled=true;
+  document.getElementById("place")
+    .textContent =
+      daily[round][0];
 
-  document.getElementById("next").classList.add("hidden");
 
-  timer=setInterval(()=>{
-    seconds--;
+  document.getElementById("msg")
+    .textContent =
+      "Tap the map to place your guess.";
 
-    document.getElementById("time").textContent=seconds;
 
-    if(seconds<=0){
-      clearInterval(timer);
+  document.getElementById("result")
+    .innerHTML =
+      "";
 
-      if(guess){
-        lock();
-      }
-    }
-  },1000);
+
+  document.getElementById("lock")
+    .disabled =
+      true;
+
+
+  document.getElementById("next")
+    .classList
+    .add("hidden");
+
+
+  timer =
+    setInterval(
+      () => {
+
+        seconds--;
+
+        document.getElementById("time")
+          .textContent =
+            seconds;
+
+
+        if(seconds <= 0){
+
+          clearInterval(timer);
+
+          if(guess){
+            lockGuess();
+          }
+
+        }
+
+      },
+      1000
+    );
+
 }
 
-map.on("click",e=>{
 
-  if(locked)return;
+/* =========================================
+   MAP CLICK
+   ========================================= */
 
-  guess=[e.latlng.lat,e.latlng.lng];
+map.on(
+  "click",
+  function(e){
 
-  if(guessMarker){
-    map.removeLayer(guessMarker);
+    if(locked){
+      return;
+    }
+
+
+    guess = [
+      e.latlng.lat,
+      e.latlng.lng
+    ];
+
+
+    if(guessMarker){
+
+      map.removeLayer(
+        guessMarker
+      );
+
+    }
+
+
+    guessMarker =
+      L.circleMarker(
+        e.latlng,
+        {
+          radius:8,
+          color:"#fff",
+          weight:2,
+          fillColor:"#1976d2",
+          fillOpacity:1
+        }
+      ).addTo(map);
+
+
+    document.getElementById("lock")
+      .disabled =
+        false;
+
+
+    document.getElementById("msg")
+      .textContent =
+        "Guess placed. Lock it when ready.";
+
   }
-
-  guessMarker=L.circleMarker(
-    e.latlng,
-    {
-      radius:8,
-      color:"#fff",
-      weight:2,
-      fillColor:"#1976d2",
-      fillOpacity:1
-    }
-  ).addTo(map);
-
-  document.getElementById("lock").disabled=false;
-
-  document.getElementById("msg").textContent=
-    "Guess placed. Lock it when ready.";
-});
-
-function lock(){
-
-  if(!guess || locked)return;
-
-  locked=true;
-
-  clearInterval(timer);
-
-  const p=daily[round];
-
-  const target=[p[1],p[2]];
-
-  const km=hav(guess,target);
-
-  const pts=points(km);
-
-  total+=pts;
-
-  actualMarker=L.circleMarker(
-    target,
-    {
-      radius:8,
-      color:"#fff",
-      weight:2,
-      fillColor:"#d64545",
-      fillOpacity:1
-    }
-  ).addTo(map);
-
-  line=L.polyline(
-    [guess,target],
-    {
-      dashArray:"6 6",
-      color:"#d64545"
-    }
-  ).addTo(map);
-
-  document.getElementById("score").textContent=
-    total.toLocaleString();
-
-  document.getElementById("result").innerHTML=
-    `<div>
-      <b>${pts.toLocaleString()} / 5,000</b><br>
-      Distance:
-      ${km<10 ? km.toFixed(1) : Math.round(km).toLocaleString()} km<br>
-      <span class="muted">
-        Actual: ${p[0]} —
-        ${p[1].toFixed(4)}, ${p[2].toFixed(4)}
-      </span>
-    </div>`;
-
-  document.getElementById("msg").textContent=
-    "Red = actual location • Blue = your guess";
-
-  if(round<daily.length-1){
-
-    document.getElementById("next")
-      .classList.remove("hidden");
-
-  }else{
-
-    document.getElementById("result").innerHTML+=
-      `<div style="margin-top:8px">
-        <b>
-          🏁 Daily total:
-          ${total.toLocaleString()} /
-          ${(daily.length*5000).toLocaleString()}
-        </b>
-      </div>`;
-  }
-}
-
-document.getElementById("lock").onclick=lock;
-
-document.getElementById("next").onclick=()=>{
-  round++;
-  showRound();
-};
+);
 
 
-/* =========================
-   ADD LOCATIONS
-   ========================= */
+/* =========================================
+   LOCK GUESS
+   ========================================= */
 
-document.getElementById("add").onclick=async ()=>{
+function lockGuess(){
 
-  alert("1. BUTTON WORKS");
-
-  const text=document
-    .getElementById("newPlaces")
-    .value
-    .trim();
-
-  if(!text){
-
-    alert("Please enter at least one location.");
-
+  if(
+    !guess ||
+    locked ||
+    !daily[round]
+  ){
     return;
   }
 
-  alert("2. READING LOCATIONS");
 
-  const lines=text
-    .split("\n")
-    .map(x=>x.trim())
-    .filter(Boolean);
+  locked = true;
 
-  const fresh=[];
+  clearInterval(timer);
 
-  for(const s of lines){
 
-    let name;
-    let lat;
-    let lon;
+  const place =
+    daily[round];
 
-    /*
-      Accept BOTH formats:
 
-      Delhi | 28.6139 | 77.2090
+  const target = [
+    place[1],
+    place[2]
+  ];
 
-      AND
 
-      Delhi | 28.6139, 77.2090
-    */
+  const km =
+    haversine(
+      guess,
+      target
+    );
 
-    const pipeParts=s
-      .split("|")
-      .map(x=>x.trim());
 
-    if(pipeParts.length===3){
+  const pts =
+    points(km);
 
-      name=pipeParts[0];
-      lat=Number(pipeParts[1]);
-      lon=Number(pipeParts[2]);
 
-    }else if(pipeParts.length===2){
+  total += pts;
 
-      name=pipeParts[0];
 
-      const coords=pipeParts[1]
-        .split(",")
-        .map(x=>x.trim());
+  actualMarker =
+    L.circleMarker(
+      target,
+      {
+        radius:8,
+        color:"#fff",
+        weight:2,
+        fillColor:"#d64545",
+        fillOpacity:1
+      }
+    ).addTo(map);
 
-      if(coords.length!==2){
+
+  line =
+    L.polyline(
+      [
+        guess,
+        target
+      ],
+      {
+        dashArray:"6 6",
+        color:"#d64545"
+      }
+    ).addTo(map);
+
+
+  document.getElementById("score")
+    .textContent =
+      total.toLocaleString();
+
+
+  const distance =
+    km < 10
+      ? km.toFixed(1)
+      : Math.round(km).toLocaleString();
+
+
+  document.getElementById("result")
+    .innerHTML =
+      `
+      <div>
+
+        <b>
+          ${pts.toLocaleString()} / 5,000
+        </b>
+
+        <br>
+
+        Distance:
+        ${distance} km
+
+        <br>
+
+        <span class="muted">
+
+          Actual:
+          ${place[0]}
+          —
+          ${place[1].toFixed(4)},
+          ${place[2].toFixed(4)}
+
+        </span>
+
+      </div>
+      `;
+
+
+  document.getElementById("msg")
+    .textContent =
+      "Red = actual location • Blue = your guess";
+
+
+  if(
+    round <
+    daily.length - 1
+  ){
+
+    document.getElementById("next")
+      .classList
+      .remove("hidden");
+
+  }
+  else{
+
+    document.getElementById("result")
+      .innerHTML +=
+        `
+        <div style="margin-top:8px">
+
+          <b>
+            🏁 Daily total:
+            ${total.toLocaleString()}
+            /
+            ${(daily.length * 5000).toLocaleString()}
+          </b>
+
+        </div>
+        `;
+
+  }
+
+}
+
+
+/* =========================================
+   LOCK BUTTON
+   ========================================= */
+
+document.getElementById("lock")
+  .onclick =
+    lockGuess;
+
+
+/* =========================================
+   NEXT BUTTON
+   ========================================= */
+
+document.getElementById("next")
+  .onclick =
+    function(){
+
+      round++;
+
+      showRound();
+
+    };
+
+
+/* =========================================
+   ADD LOCATIONS
+   ========================================= */
+
+document.getElementById("add")
+  .onclick =
+  async function(){
+
+    const text =
+      document.getElementById(
+        "newPlaces"
+      ).value.trim();
+
+
+    if(!text){
+
+      alert(
+        "Please enter at least one location."
+      );
+
+      return;
+
+    }
+
+
+    const lines =
+      text
+        .split("\n")
+        .map(
+          x => x.trim()
+        )
+        .filter(Boolean);
+
+
+    const fresh = [];
+
+
+    for(
+      const lineText of lines
+    ){
+
+      let name;
+
+      let lat;
+
+      let lon;
+
+
+      const pipeParts =
+        lineText
+          .split("|")
+          .map(
+            x => x.trim()
+          );
+
+
+      /*
+        Supported:
+
+        Delhi | 28.6139 | 77.2090
+
+        Delhi | 28.6139, 77.2090
+      */
+
+
+      if(
+        pipeParts.length === 3
+      ){
+
+        name =
+          pipeParts[0];
+
+        lat =
+          Number(
+            pipeParts[1]
+          );
+
+        lon =
+          Number(
+            pipeParts[2]
+          );
+
+      }
+      else if(
+        pipeParts.length === 2
+      ){
+
+        name =
+          pipeParts[0];
+
+
+        const coords =
+          pipeParts[1]
+            .split(",")
+            .map(
+              x => x.trim()
+            );
+
+
+        if(
+          coords.length !== 2
+        ){
+
+          alert(
+            "Could not read:\n\n" +
+            lineText +
+            "\n\nUse:\n" +
+            "Place name | latitude, longitude"
+          );
+
+          return;
+
+        }
+
+
+        lat =
+          Number(
+            coords[0]
+          );
+
+        lon =
+          Number(
+            coords[1]
+          );
+
+      }
+      else{
 
         alert(
-          "Could not read:\n\n"+
-          s+
-          "\n\nUse:\nPlace name | latitude, longitude"
+          "Could not read:\n\n" +
+          lineText +
+          "\n\nUse:\n" +
+          "Place name | latitude, longitude"
         );
 
         return;
+
       }
 
-      lat=Number(coords[0]);
-      lon=Number(coords[1]);
 
-    }else{
+      if(
+        !name ||
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lon) ||
+        lat < -90 ||
+        lat > 90 ||
+        lon < -180 ||
+        lon > 180
+      ){
 
-      alert(
-        "Could not read:\n\n"+
-        s+
-        "\n\nUse:\nPlace name | latitude, longitude"
-      );
+        alert(
+          "Invalid location:\n\n" +
+          lineText
+        );
 
-      return;
+        return;
+
+      }
+
+
+      fresh.push({
+
+        name:
+          name,
+
+        latitude:
+          lat,
+
+        longitude:
+          lon
+
+      });
+
     }
 
+
     if(
-      !name ||
-      !Number.isFinite(lat) ||
-      !Number.isFinite(lon) ||
-      lat<-90 ||
-      lat>90 ||
-      lon<-180 ||
-      lon>180
+      fresh.length === 0
     ){
 
       alert(
-        "Invalid location:\n\n"+
-        s
+        "No valid locations found."
       );
 
       return;
+
     }
 
-    fresh.push({
-      name:name,
-      latitude:lat,
-      longitude:lon
-    });
-  }
 
-  if(!fresh.length){
+    try{
 
-    alert("No valid locations found.");
+      /*
+        Save to Supabase
+      */
 
-    return;
-  }
+      const result =
+        await supabaseClient
+          .from("locations")
+          .insert(fresh);
 
-  alert(
-    "3. "+fresh.length+
-    " LOCATION(S) READ\n\n"+
-    "Now connecting to Supabase..."
-  );
 
-  console.log("Locations ready for Supabase:",fresh);
+      if(result.error){
 
-  try{
+        console.error(
+          "Supabase error:",
+          result.error
+        );
 
-    const result=await Promise.race([
 
-      supabaseClient
-        .from("locations")
-        .insert(fresh),
+        alert(
+          "Supabase error:\n\n" +
+          result.error.message +
+          "\n\nCode: " +
+          (
+            result.error.code ||
+            "unknown"
+          )
+        );
 
-      new Promise(resolve=>
-        setTimeout(
-          ()=>resolve({
-            error:{
-              message:
-                "Supabase request timed out after 10 seconds."
-            }
-          }),
-          10000
+        return;
+
+      }
+
+
+      /*
+        Also save locally
+      */
+
+      added =
+        added.concat(
+          fresh.map(
+            x => [
+              x.name,
+              x.latitude,
+              x.longitude
+            ]
+          )
+        );
+
+
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(
+          added
         )
-      )
+      );
 
-    ]);
 
-    const error=result.error;
+      pool =
+        base.concat(
+          added
+        );
 
-    if(error){
 
-      console.error("SUPABASE ERROR:",error);
+      document.getElementById(
+        "newPlaces"
+      ).value =
+        "";
+
+
+      updateCount();
+
+
+      start();
+
 
       alert(
-        "SUPABASE ERROR:\n\n"+
-        error.message+
-        "\n\nCode: "+
-        (error.code || "unknown")
+        fresh.length +
+        " location(s) added successfully."
       );
 
+    }
+    catch(error){
+
+      console.error(
+        "Unexpected error:",
+        error
+      );
+
+
+      alert(
+        "Error:\n\n" +
+        error.message
+      );
+
+    }
+
+  };
+
+
+/* =========================================
+   RESET
+   ========================================= */
+
+document.getElementById("reset")
+  .onclick =
+  function(){
+
+    const confirmed =
+      confirm(
+        "Remove all locations you added in this browser?"
+      );
+
+
+    if(!confirmed){
       return;
     }
 
-    alert("4. SUPABASE SAVE SUCCESSFUL");
 
-    added=added.concat(
-      fresh.map(x=>[
-        x.name,
-        x.latitude,
-        x.longitude
-      ])
+    added = [];
+
+
+    localStorage.removeItem(
+      storageKey
     );
 
-    localStorage.setItem(
-      key,
-      JSON.stringify(added)
-    );
 
-    pool=base.concat(added);
+    pool =
+      base.concat(
+        added
+      );
 
-    document.getElementById("newPlaces").value="";
 
     updateCount();
 
     start();
 
-    alert(
-      "5. DONE!\n\n"+
-      fresh.length+
-      " location(s) added."
-    );
-
-  }catch(err){
-
-    console.error("UNEXPECTED ERROR:",err);
-
-    alert(
-      "JAVASCRIPT ERROR:\n\n"+
-      err.message
-    );
-  }
-};
+  };
 
 
-/* =========================
-   RESET
-   ========================= */
-
-document.getElementById("reset").onclick=()=>{
-
-  if(
-    confirm(
-      "Remove all locations you added in this browser?"
-    )
-  ){
-
-    added=[];
-
-    localStorage.removeItem(key);
-
-    pool=base.concat(added);
-
-    updateCount();
-
-    start();
-  }
-};
+/* =========================================
+   INITIALIZE APP
+   ========================================= */
 
 updateCount();
 
 start();
 
 </script>
+
+</body>
+</html>
