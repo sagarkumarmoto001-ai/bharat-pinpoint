@@ -670,14 +670,31 @@ document.getElementById("add").onclick = async function() {
     const result = await Promise.race([insertPromise, timeoutPromise]);
 
     if (result && result.error) {
-      console.error("Supabase error:", result.error);
-      alert(`${fresh.length} location(s) saved locally, but cloud save failed.`);
+      console.error("Supabase Error Object:", result.error);
+      const err = result.error;
+      alert(
+        `${fresh.length} location(s) saved locally, but cloud save failed.\n\n` +
+        `Supabase Error Details:\n` +
+        `Code: ${err.code ?? "N/A"}\n` +
+        `Message: ${err.message ?? "N/A"}\n` +
+        `Details: ${err.details ?? "N/A"}\n` +
+        `Hint: ${err.hint ?? "N/A"}\n` +
+        `Status: ${err.status ?? result.status ?? "N/A"}`
+      );
     } else {
       alert(`${fresh.length} location(s) saved locally and to cloud successfully!`);
     }
   } catch (err) {
     console.error("Supabase request error or timeout:", err);
-    alert(`${fresh.length} location(s) saved locally, but cloud save failed.`);
+    alert(
+      `${fresh.length} location(s) saved locally, but cloud save failed.\n\n` +
+      `Error Details:\n` +
+      `Code: ${err.code ?? "N/A"}\n` +
+      `Message: ${err.message ?? "N/A"}\n` +
+      `Details: ${err.details ?? "N/A"}\n` +
+      `Hint: ${err.hint ?? "N/A"}\n` +
+      `Status: ${err.status ?? "N/A"}`
+    );
   }
 };
 
