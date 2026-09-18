@@ -137,56 +137,496 @@ function lock(){
 }
 document.getElementById("lock").onclick=lock;
 document.getElementById("next").onclick=()=>{round++;showRound()};
-document.getElementById("add").onclick=async ()=>{
-  alert("BUTTON CLICKED");
-  console.log("ADD BUTTON WORKS");
+<script>
+let base=[
+["Jathiya Devi",31.1332,77.0984],
+["Nathu La",27.3865,88.8309],
+["Changtang Valley",33.4000,79.0000],
+["Ramappa Temple",18.2591,79.9432],
+["Coffee Board of India",12.9794,77.5946],
+["Tso Kar",33.3134,78.0125],
+["Sir Creek",23.6425,68.1633],
+["3 Kilo Coal Mine",25.5255,92.7482]
+];
 
-alert("READING LOCATIONS...");
-  const lines=document.getElementById("newPlaces").value.split("\n").map(x=>x.trim()).filter(Boolean),fresh=[];
+const key="bharatPinpointAddedV1";
 
-  for(const s of lines){
-    const parts=s.split("|").map(x=>x.trim());
+let added=JSON.parse(localStorage.getItem(key)||"[]");
+let pool=base.concat(added);
+let round=0,total=0,guess=null,actualMarker=null,guessMarker=null;
+let line=null,locked=false,seconds=60,timer=null;
 
-    if(parts.length!==3){
-      alert("Could not read: "+s+" | Use: Place name | latitude | longitude");
-      return;
-    }
+const map=L.map("map",{minZoom:4,maxZoom:12}).setView([22.5,79],5);
 
-    const name=parts[0];
-    const lat=Number(parts[1]);
-    const lon=Number(parts[2]);
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {attribution:"© OpenStreetMap contributors"}
+).addTo(map);
 
-    if(!name || !Number.isFinite(lat) || !Number.isFinite(lon) ||
-       lat<-90 || lat>90 || lon<-180 || lon>180){
-      alert("Invalid location: "+s);
-      return;
-    }
+function dayNumber(){
+  const d=new Date();
+  return Math.floor(
+    Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000
+  );
+}
 
-    fresh.push([name,lat,lon]);
+function dailyOrder(){
+  const n=dayNumber();
+  const size=10;
+  const start=(n*size)%pool.length;
+  let arr=[];
+
+  for(let i=0;i<Math.min(size,pool.length);i++){
+    arr.push(pool[(start+i)%pool.length]);
   }
 
-  const { error } = await supabaseClient
-    .from("locations")
-    .insert(fresh.map(x => ({
-      name:x[0],
-      latitude:x[1],
-      longitude:x[2]
-    })));
+  for(let i=arr.length-1;i>0;i--){
+    const j=(n+i*17)%(i+1);
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
 
-  if(error){
-    alert("Could not save locations: " + error.message);
-    console.error(error);
+  return arr;
+}
+
+function updateCount(){
+  document.getElementById("count").textContent=
+    `${pool.length} locations in your pool.`;
+}
+
+function hav(a,b){
+  const R=6371;
+  const p=Math.PI/180;
+  const dLat=(b[0]-a[0])*p;
+  const dLon=(b[1]-a[1])*p;
+
+  const x=
+    Math.sin(dLat/2)**2+
+    Math.cos(a[0]*p)*
+    Math.cos(b[0]*p)*
+    Math.sin(dLon/2)**2;
+
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+
+function points(km){
+  return Math.max(
+    0,
+    Math.round(5000*Math.exp(-km/1200))
+  );
+}
+
+function start(){
+  const daily=dailyOrder();
+  window.daily=daily;
+
+  document.getElementById("day").textContent=
+    "Day "+(dayNumber()+1);
+
+  round=0;
+  total=0;
+
+  document.getElementById("score").textContent="0";
+
+  showRound();
+}
+
+function showRound(){
+  clearInterval(timer);
+
+  seconds=60;
+  locked=false;
+  guess=null;
+
+  if(guessMarker){
+    map.removeLayer(guessMarker);
+    guessMarker=null;
+  }
+
+  if(actualMarker){
+    map.removeLayer(actualMarker);
+    actualMarker=null;
+  }
+
+  if(line){
+    map.removeLayer(line);
+    line=null;
+  }
+
+  document.getElementById("time").textContent=seconds;
+
+  document.getElementById("round").textContent=
+    `ROUND ${round+1} / ${daily.length}`;
+
+  document.getElementById("place").textContent=
+    daily[round][0];
+
+  document.getElementById("msg").textContent=
+    "Tap the map to place your guess.";
+
+  document.getElementById("result").innerHTML="";
+
+  document.getElementById("lock").disabled=true;
+
+  document.getElementById("next").classList.add("hidden");
+
+  timer=setInterval(()=>{
+    seconds--;
+
+    document.getElementById("time").textContent=seconds;
+
+    if(seconds<=0){
+      clearInterval(timer);
+
+      if(guess){
+        lock();
+      }
+    }
+  },1000);
+}
+
+map.on("click",e=>{
+
+  if(locked)return;
+
+  guess=[e.latlng.lat,e.latlng.lng];
+
+  if(guessMarker){
+    map.removeLayer(guessMarker);
+  }
+
+  guessMarker=L.circleMarker(
+    e.latlng,
+    {
+      radius:8,
+      color:"#fff",
+      weight:2,
+      fillColor:"#1976d2",
+      fillOpacity:1
+    }
+  ).addTo(map);
+
+  document.getElementById("lock").disabled=false;
+
+  document.getElementById("msg").textContent=
+    "Guess placed. Lock it when ready.";
+});
+
+function lock(){
+
+  if(!guess || locked)return;
+
+  locked=true;
+
+  clearInterval(timer);
+
+  const p=daily[round];
+
+  const target=[p[1],p[2]];
+
+  const km=hav(guess,target);
+
+  const pts=points(km);
+
+  total+=pts;
+
+  actualMarker=L.circleMarker(
+    target,
+    {
+      radius:8,
+      color:"#fff",
+      weight:2,
+      fillColor:"#d64545",
+      fillOpacity:1
+    }
+  ).addTo(map);
+
+  line=L.polyline(
+    [guess,target],
+    {
+      dashArray:"6 6",
+      color:"#d64545"
+    }
+  ).addTo(map);
+
+  document.getElementById("score").textContent=
+    total.toLocaleString();
+
+  document.getElementById("result").innerHTML=
+    `<div>
+      <b>${pts.toLocaleString()} / 5,000</b><br>
+      Distance:
+      ${km<10 ? km.toFixed(1) : Math.round(km).toLocaleString()} km<br>
+      <span class="muted">
+        Actual: ${p[0]} —
+        ${p[1].toFixed(4)}, ${p[2].toFixed(4)}
+      </span>
+    </div>`;
+
+  document.getElementById("msg").textContent=
+    "Red = actual location • Blue = your guess";
+
+  if(round<daily.length-1){
+
+    document.getElementById("next")
+      .classList.remove("hidden");
+
+  }else{
+
+    document.getElementById("result").innerHTML+=
+      `<div style="margin-top:8px">
+        <b>
+          🏁 Daily total:
+          ${total.toLocaleString()} /
+          ${(daily.length*5000).toLocaleString()}
+        </b>
+      </div>`;
+  }
+}
+
+document.getElementById("lock").onclick=lock;
+
+document.getElementById("next").onclick=()=>{
+  round++;
+  showRound();
+};
+
+
+/* =========================
+   ADD LOCATIONS
+   ========================= */
+
+document.getElementById("add").onclick=async ()=>{
+
+  alert("1. BUTTON WORKS");
+
+  const text=document
+    .getElementById("newPlaces")
+    .value
+    .trim();
+
+  if(!text){
+
+    alert("Please enter at least one location.");
+
     return;
   }
-added=added.concat(fresh);
-localStorage.setItem(key,JSON.stringify(added));
-pool=base.concat(added);
 
-document.getElementById("newPlaces").value="";
-updateCount();
-start();
-alert(fresh.length+" location(s) added.");
+  alert("2. READING LOCATIONS");
+
+  const lines=text
+    .split("\n")
+    .map(x=>x.trim())
+    .filter(Boolean);
+
+  const fresh=[];
+
+  for(const s of lines){
+
+    let name;
+    let lat;
+    let lon;
+
+    /*
+      Accept BOTH formats:
+
+      Delhi | 28.6139 | 77.2090
+
+      AND
+
+      Delhi | 28.6139, 77.2090
+    */
+
+    const pipeParts=s
+      .split("|")
+      .map(x=>x.trim());
+
+    if(pipeParts.length===3){
+
+      name=pipeParts[0];
+      lat=Number(pipeParts[1]);
+      lon=Number(pipeParts[2]);
+
+    }else if(pipeParts.length===2){
+
+      name=pipeParts[0];
+
+      const coords=pipeParts[1]
+        .split(",")
+        .map(x=>x.trim());
+
+      if(coords.length!==2){
+
+        alert(
+          "Could not read:\n\n"+
+          s+
+          "\n\nUse:\nPlace name | latitude, longitude"
+        );
+
+        return;
+      }
+
+      lat=Number(coords[0]);
+      lon=Number(coords[1]);
+
+    }else{
+
+      alert(
+        "Could not read:\n\n"+
+        s+
+        "\n\nUse:\nPlace name | latitude, longitude"
+      );
+
+      return;
+    }
+
+    if(
+      !name ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon) ||
+      lat<-90 ||
+      lat>90 ||
+      lon<-180 ||
+      lon>180
+    ){
+
+      alert(
+        "Invalid location:\n\n"+
+        s
+      );
+
+      return;
+    }
+
+    fresh.push({
+      name:name,
+      latitude:lat,
+      longitude:lon
+    });
+  }
+
+  if(!fresh.length){
+
+    alert("No valid locations found.");
+
+    return;
+  }
+
+  alert(
+    "3. "+fresh.length+
+    " LOCATION(S) READ\n\n"+
+    "Now connecting to Supabase..."
+  );
+
+  console.log("Locations ready for Supabase:",fresh);
+
+  try{
+
+    const result=await Promise.race([
+
+      supabaseClient
+        .from("locations")
+        .insert(fresh),
+
+      new Promise(resolve=>
+        setTimeout(
+          ()=>resolve({
+            error:{
+              message:
+                "Supabase request timed out after 10 seconds."
+            }
+          }),
+          10000
+        )
+      )
+
+    ]);
+
+    const error=result.error;
+
+    if(error){
+
+      console.error("SUPABASE ERROR:",error);
+
+      alert(
+        "SUPABASE ERROR:\n\n"+
+        error.message+
+        "\n\nCode: "+
+        (error.code || "unknown")
+      );
+
+      return;
+    }
+
+    alert("4. SUPABASE SAVE SUCCESSFUL");
+
+    added=added.concat(
+      fresh.map(x=>[
+        x.name,
+        x.latitude,
+        x.longitude
+      ])
+    );
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(added)
+    );
+
+    pool=base.concat(added);
+
+    document.getElementById("newPlaces").value="";
+
+    updateCount();
+
+    start();
+
+    alert(
+      "5. DONE!\n\n"+
+      fresh.length+
+      " location(s) added."
+    );
+
+  }catch(err){
+
+    console.error("UNEXPECTED ERROR:",err);
+
+    alert(
+      "JAVASCRIPT ERROR:\n\n"+
+      err.message
+    );
+  }
 };
+
+
+/* =========================
+   RESET
+   ========================= */
+
+document.getElementById("reset").onclick=()=>{
+
+  if(
+    confirm(
+      "Remove all locations you added in this browser?"
+    )
+  ){
+
+    added=[];
+
+    localStorage.removeItem(key);
+
+    pool=base.concat(added);
+
+    updateCount();
+
+    start();
+  }
+};
+
+updateCount();
+
+start();
+
+</script>
 document.getElementById("reset").onclick=()=>{
   if(confirm("Remove all locations you added in this browser?")){added=[];localStorage.removeItem(key);pool=base.concat(added);updateCount();start();}
 };
