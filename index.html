@@ -627,10 +627,3 @@ updateCount();
 start();
 
 </script>
-document.getElementById("reset").onclick=()=>{
-  if(confirm("Remove all locations you added in this browser?")){added=[];localStorage.removeItem(key);pool=base.concat(added);updateCount();start();}
-};
-updateCount();start();
-</script>
-</body>
-</html>
